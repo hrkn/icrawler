@@ -1,7 +1,6 @@
 import html
-import re
+import json
 
-import six
 from bs4 import BeautifulSoup
 
 from .. import Crawler, Feeder, ImageDownloader, Parser
@@ -118,17 +117,14 @@ class BingParser(Parser):
     def parse(self, response):
         soup = BeautifulSoup(response.content.decode("utf-8", "ignore"), "lxml")
         image_divs = soup.find_all("div", class_="imgpt")
-        pattern = re.compile(r"murl\":\"(.*?)\.jpg")
         for div in image_divs:
             try:
                 href_str = html.unescape(div.a["m"])
+                m = json.loads(href_str)
+                img_url = m["murl"]
+                yield dict(file_url=img_url)
             except KeyError:
                 continue
-            match = pattern.search(href_str)
-            if match:
-                name = match.group(1) if six.PY3 else match.group(1).encode("utf-8")
-                img_url = f"{name}.jpg"
-                yield dict(file_url=img_url)
 
 
 class BingImageCrawler(Crawler):
