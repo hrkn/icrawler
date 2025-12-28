@@ -4,7 +4,7 @@ import logging
 from collections.abc import Mapping
 from urllib.parse import urlsplit
 
-import requests
+from curl_cffi import requests, exceptions
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
 
 from .. import defaults
@@ -29,7 +29,7 @@ class Session(requests.Session):
     @retry(
         stop=stop_after_attempt(defaults.MAX_RETRIES),
         wait=wait_random_exponential(exp_base=defaults.BACKOFF_BASE),
-        retry=retry_if_exception_type(requests.RequestException),
+        retry=retry_if_exception_type(exceptions.RequestException),
     )
     def request(self, method, url, *args, **kwargs):
         message = f"{method}ing {url}"
@@ -45,13 +45,13 @@ class Session(requests.Session):
             proxy = self.proxy_pool.get_next(protocol=self._url_scheme(url))
             self.logger.debug(f"Using proxy: {proxy.format()}")
             try:
-                response = super().request(method, url, *args, proxies=proxy.format(), **kwargs)
+                response = super().request(method, url, *args, proxies=proxy.format(), impersonate="chrome", **kwargs)
                 self.proxy_pool.increase_weight(proxy)
-            except requests.RequestException:
+            except exceptions.RequestException:
                 self.proxy_pool.decrease_weight(proxy)
                 raise
         else:
-            response = super().request(method, url, *args, **kwargs)
+            response = super().request(method, url, impersonate="chrome", *args, **kwargs)
 
         if "set-cookie" in response.headers:
             self.cookies.update(response.cookies)
