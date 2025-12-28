@@ -41,8 +41,11 @@ class Session(requests.Session):
             message += f" with {kwargs}"
         self.logger.debug(message)
 
-        if self.proxy_pool is not None:
-            proxy = self.proxy_pool.get_next(protocol=self._url_scheme(url))
+        if (
+            self.proxy_pool is not None
+            and (proxy := self.proxy_pool.get_next(protocol=self._url_scheme(url)))
+            is not None
+        ):
             self.logger.debug(f"Using proxy: {proxy.format()}")
             try:
                 response = super().request(method, url, *args, proxies=proxy.format(), impersonate="chrome", **kwargs)
