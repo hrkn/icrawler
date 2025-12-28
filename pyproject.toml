@@ -49,6 +49,7 @@ dependencies = [
   "beautifulsoup4",
   "bs4",
   "chanfig",
+  "curl-cffi>=0.5.10",
   "lxml",
   "pillow",
   "requests",
