@@ -35,6 +35,7 @@ class Downloader(ThreadPool):
         self.session = session
         self.storage = storage
         self.file_idx_offset = 0
+        self.set_referer()
         self.clear_status()
 
     def clear_status(self):
@@ -56,6 +57,9 @@ class Downloader(ThreadPool):
             self.file_idx_offset = self.storage.max_file_idx()
         else:
             raise ValueError('"file_idx_offset" must be an integer or `auto`')
+
+    def set_referer(self, referer=None):
+        self.referer = referer
 
     def get_filename(self, task, default_ext):
         """Set the path where the image will be saved.
@@ -115,9 +119,12 @@ class Downloader(ThreadPool):
                     return
                 self.fetched_num -= 1
 
+        headers = {}
+        if self.referer:
+            headers["Referer"] = self.referer
         while retry > 0 and not self.signal.get("reach_max_num") and not self.signal.get("exceed_storage_space"):
             try:
-                response = self.session.get(file_url, timeout=timeout)
+                response = self.session.get(file_url, headers=headers, timeout=timeout)
             except Exception as e:
                 self.logger.error(
                     "Exception caught when downloading file %s, " "error: %s, remaining retry times: %d",
