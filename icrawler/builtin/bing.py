@@ -130,6 +130,7 @@ class BingParser(Parser):
 class BingImageCrawler(Crawler):
     def __init__(self, feeder_cls=BingFeeder, parser_cls=BingParser, downloader_cls=ImageDownloader, *args, **kwargs):
         super().__init__(feeder_cls, parser_cls, downloader_cls, *args, **kwargs)
+        self.downloader.set_referer("https://www.bing.com/")
 
     def crawl(
         self,
