@@ -3,7 +3,7 @@ import queue
 import time
 from io import BytesIO
 from threading import current_thread
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlunparse, quote
 
 from PIL import Image
 
@@ -102,7 +102,13 @@ class Downloader(ThreadPool):
             **kwargs: reserved arguments for overriding.
         """
         file_url = task["file_url"]
-        referer = task.get("referer", None)
+
+        # Encode path and query part of referer due to Bing parent page URL hasn't been URL-encoded
+        referer = task.get("referer", "https://www.bing.com/")
+        part = urlparse(referer)
+        part = part._replace(path=quote(part.path), query=quote(part.query, safe="="))
+        referer = urlunparse(part)
+
         task["success"] = False
         task["filename"] = None
         retry = max_retry
